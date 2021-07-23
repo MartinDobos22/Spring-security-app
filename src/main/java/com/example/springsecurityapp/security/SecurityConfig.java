@@ -1,10 +1,12 @@
-package com.example.springsecurityapp;
+package com.example.springsecurityapp.security;
 
+import com.example.springsecurityapp.permissionandrole.UserPermission;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -14,32 +16,37 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
-import static com.example.springsecurityapp.UserRole.*;
+import static com.example.springsecurityapp.permissionandrole.UserRole.*;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     private final PasswordEncoder passwordEncoder;
 
-    //basic security configuration
-    //pri každom requeste je treba zadať meno a heslo
+    @Autowired
+    public SecurityConfig(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    //basic security configuration and role base authentication
     //pop up window
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.
-                csrf().disable().
+                //csrf overuje token ktorý sa pošle z fe na server
+                //csrf().disable().
                 authorizeRequests().
                 antMatchers("/", "index", "/css/*", "/js/*").permitAll().
                                         //všetko za lomítkom /student/**
                 antMatchers("/api/**").hasRole(STUDENT.name()).
                 //kto môže mať práva na update, create a delete osoby z db
-                antMatchers(HttpMethod.DELETE,"/management/api/**").hasAnyAuthority(UserPermission.COURSE_WRITE.getPermisson()).
-                antMatchers(HttpMethod.POST,"/management/api/**").hasAnyAuthority(UserPermission.COURSE_WRITE.getPermisson()).
-                antMatchers(HttpMethod.PUT,"/management/api/**").hasAnyAuthority(UserPermission.COURSE_WRITE.getPermisson()).
-                antMatchers(HttpMethod.GET,"/management/api/**").hasAnyAuthority(ADMIN.name(), ADMINTRAINEE.name()).
+//                antMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(UserPermission.COURSE_WRITE.getPermisson()).
+//                antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(UserPermission.COURSE_WRITE.getPermisson()).
+//                antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(UserPermission.COURSE_WRITE.getPermisson()).
+//                antMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name()).
                 anyRequest().
                 authenticated().
                 and().
@@ -53,21 +60,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         UserDetails martinDobosUser =
                 User.builder()
                         .username("martin")
-                        .password(passwordEncoder.encode("heslo"))
+                        .password(passwordEncoder.encode("123"))
 //                        .roles(STUDENT.name())
                         .authorities(STUDENT.grantedAuthorities())
                         .build();
 
                 UserDetails martonixUser = User.builder()
                         .username("martonix")
-                        .password(passwordEncoder.encode("hesloo"))
+                        .password(passwordEncoder.encode("1234"))
 //                        .roles(ADMIN.name())s
                         .authorities(ADMIN.grantedAuthorities())
                         .build();
 
                 UserDetails oliverUser = User.builder()
                         .username("olinux")
-                        .password(passwordEncoder.encode("heslooo"))
+                        .password(passwordEncoder.encode("12345"))
 //                        .roles(ADMINTRAINEE.name())
                         .authorities(ADMINTRAINEE.grantedAuthorities())
                         .build();

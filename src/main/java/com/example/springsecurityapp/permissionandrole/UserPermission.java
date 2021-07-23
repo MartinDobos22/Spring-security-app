@@ -1,9 +1,9 @@
-package com.example.springsecurityapp;
+package com.example.springsecurityapp.permissionandrole;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@AllArgsConstructor
 @Getter
 public enum UserPermission {
     STUDENT_WRITE("student:write"),
@@ -14,4 +14,8 @@ public enum UserPermission {
 
     private final String permisson;
 
+    @Autowired
+    UserPermission(String permisson) {
+        this.permisson = permisson;
+    }
 }
