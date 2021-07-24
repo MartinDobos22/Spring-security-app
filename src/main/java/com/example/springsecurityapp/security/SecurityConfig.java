@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.util.concurrent.TimeUnit;
 
@@ -52,15 +53,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                antMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(UserPermission.COURSE_WRITE.getPermisson()).
 //                antMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(UserPermission.COURSE_WRITE.getPermisson()).
 //                antMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name()).
-                anyRequest().
-                authenticated().
+                anyRequest().authenticated().
                 and().
-                formLogin().
-                loginPage("/login").
-                permitAll().
-                defaultSuccessUrl("courses", true).
+                formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true).
                 and().
-                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured");
+                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured").
+                and().
+                //na logout pri zapnutom csrf zásadne post metoda, pri vypnutom je povolená akákoľvek http metoda
+                logout().logoutUrl("/logout")
+                    //zmazať tento riadok ak je csrf enable, nechať ak je disable
+                    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                    .clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID", "remember-me").logoutUrl("/login");
                 //basic security auth
                 //httpBasic();
     }
