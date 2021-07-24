@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.example.springsecurityapp.permissionandrole.UserRole.*;
 
 @Configuration
@@ -38,9 +40,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.
                 //csrf overuje token ktorý sa pošle z fe na server
-                //csrf().disable().
-                csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).
-                and().
+//                csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).
+//                and().
+                csrf().disable().
                 authorizeRequests().
                 antMatchers("/", "index", "/css/*", "/js/*").permitAll().
                                         //všetko za lomítkom /student/**
@@ -53,7 +55,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 anyRequest().
                 authenticated().
                 and().
-                httpBasic();
+                formLogin().
+                loginPage("/login").
+                permitAll().
+                defaultSuccessUrl("courses", true).
+                and().
+                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured");
+                //basic security auth
+                //httpBasic();
     }
 
     //role base authentication
