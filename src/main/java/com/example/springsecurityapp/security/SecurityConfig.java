@@ -1,11 +1,14 @@
 package com.example.springsecurityapp.security;
 
 import com.example.springsecurityapp.permissionandrole.UserPermission;
+import com.example.springsecurityapp.services.ApplicationUserDetailService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,19 +27,18 @@ import static com.example.springsecurityapp.permissionandrole.UserRole.*;
 
 @Configuration
 @EnableWebSecurity
+@AllArgsConstructor
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserDetailService applicationUserDetailService;
 
-    @Autowired
-    public SecurityConfig(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
 
     //basic security configuration and role base authentication
     //pop up window
+    /*
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.
@@ -67,37 +69,39 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 //basic security auth
                 //httpBasic();
     }
+     */
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.
+            csrf().disable().
+                authorizeRequests().
+                antMatchers("/", "index", "/css/*", "/js/*").permitAll().
+                antMatchers("/api/**").hasRole(STUDENT.name()).
+                anyRequest().authenticated().
+                and().
+                formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true).
+                and().
+                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured").
+                and().
+                logout().logoutUrl("/logout").logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")).
+                    clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID", "remember-me").logoutSuccessUrl("/login");
+
+    }
 
     //role base authentication
+
+
     @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(daoAuthenticationProvider());
+    }
+
     @Bean
-    protected UserDetailsService userDetailsService() {
-        UserDetails martinDobosUser =
-                User.builder()
-                        .username("martin")
-                        .password(passwordEncoder.encode("123"))
-//                        .roles(STUDENT.name())
-                        .authorities(STUDENT.grantedAuthorities())
-                        .build();
-
-                UserDetails martonixUser = User.builder()
-                        .username("martonix")
-                        .password(passwordEncoder.encode("1234"))
-//                        .roles(ADMIN.name())s
-                        .authorities(ADMIN.grantedAuthorities())
-                        .build();
-
-                UserDetails oliverUser = User.builder()
-                        .username("olinux")
-                        .password(passwordEncoder.encode("12345"))
-//                        .roles(ADMINTRAINEE.name())
-                        .authorities(ADMINTRAINEE.grantedAuthorities())
-                        .build();
-
-
-        return new InMemoryUserDetailsManager(
-                martinDobosUser,
-                martonixUser,
-                oliverUser);
+    public DaoAuthenticationProvider daoAuthenticationProvider(){
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+        daoAuthenticationProvider.setUserDetailsService(applicationUserDetailService);
+        return daoAuthenticationProvider;
     }
 }
