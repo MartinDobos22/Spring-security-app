@@ -1,5 +1,6 @@
 package com.example.springsecurityapp.security;
 
+import com.example.springsecurityapp.jwt.JwtUsernameAndPasswordAuthenticationFilter;
 import com.example.springsecurityapp.permissionandrole.UserPermission;
 import com.example.springsecurityapp.services.ApplicationUserDetailService;
 import lombok.AllArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -71,22 +73,37 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
      */
 
+    //form base authentication
+//    @Override
+//    protected void configure(HttpSecurity http) throws Exception {
+//        http.
+//            csrf().disable().
+//                authorizeRequests().
+//                antMatchers("/", "index", "/css/*", "/js/*").permitAll().
+//                antMatchers("/api/**").hasRole(STUDENT.name()).
+//                anyRequest().authenticated().
+//                and().
+//                formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true).
+//                and().
+//                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured").
+//                and().
+//                logout().logoutUrl("/logout").logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")).
+//                    clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID", "remember-me").logoutSuccessUrl("/login");
+//
+//    }
+
+    //jwt authentication configuration
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.
-            csrf().disable().
+                csrf().disable().
+                sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).
+                and().
+                addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager())).
                 authorizeRequests().
                 antMatchers("/", "index", "/css/*", "/js/*").permitAll().
                 antMatchers("/api/**").hasRole(STUDENT.name()).
-                anyRequest().authenticated().
-                and().
-                formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true).
-                and().
-                rememberMe().tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(31)).key("secured").
-                and().
-                logout().logoutUrl("/logout").logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")).
-                    clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID", "remember-me").logoutSuccessUrl("/login");
-
+                anyRequest().authenticated();
     }
 
     //role base authentication
