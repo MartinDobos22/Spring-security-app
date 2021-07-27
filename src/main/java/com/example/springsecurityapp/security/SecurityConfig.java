@@ -1,5 +1,7 @@
 package com.example.springsecurityapp.security;
 
+import com.example.springsecurityapp.jwt.JwtConfig;
+import com.example.springsecurityapp.jwt.JwtTokenVerifier;
 import com.example.springsecurityapp.jwt.JwtUsernameAndPasswordAuthenticationFilter;
 import com.example.springsecurityapp.permissionandrole.UserPermission;
 import com.example.springsecurityapp.services.ApplicationUserDetailService;
@@ -23,6 +25,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import javax.crypto.SecretKey;
 import java.util.concurrent.TimeUnit;
 
 import static com.example.springsecurityapp.permissionandrole.UserRole.*;
@@ -36,6 +39,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final PasswordEncoder passwordEncoder;
     private final ApplicationUserDetailService applicationUserDetailService;
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
 
 
     //basic security configuration and role base authentication
@@ -99,7 +104,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 csrf().disable().
                 sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).
                 and().
-                addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager())).
+                addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretKey)).
+                addFilterAfter(new JwtTokenVerifier(secretKey, jwtConfig), JwtUsernameAndPasswordAuthenticationFilter.class).
                 authorizeRequests().
                 antMatchers("/", "index", "/css/*", "/js/*").permitAll().
                 antMatchers("/api/**").hasRole(STUDENT.name()).
